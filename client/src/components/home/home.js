@@ -107,12 +107,11 @@ export default class Home extends Component {
     const ipfs_hash = await contract.methods
       .getHash(document.getElementById('student-email').value)
       .call()
-    const cert_id = await contract.methods
-      .getId(document.getElementById('student-email').value)
+    const certficate = await contract.methods
+      .certificates(document.getElementById('student-email').value)
       .call()
     this.setState({ ipfsHash: ipfs_hash })
-    console.log(ipfs_hash)
-    console.log(cert_id)
+    console.log(certficate)
     return null
   }
 
