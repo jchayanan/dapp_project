@@ -2,7 +2,7 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://jchayanan.github.io",
+  "homepage": "https://jchayanan.github.io/dapp_project/",
   "dependencies": {
     "bootstrap": "^5.1.3",
     "cors": "^2.8.5",
