@@ -1,15 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
 import Home from './components/home/home'
+import Header from './components/home/header'
 import * as serviceWorker from './serviceWorker';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
-
 ReactDOM.render(
     <React.StrictMode>
+    <Header />
     <Home />
     </React.StrictMode>,
     document.getElementById('root'));

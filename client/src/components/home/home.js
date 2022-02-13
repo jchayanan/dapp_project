@@ -24,7 +24,8 @@ export default class Home extends Component {
     imageStatus: false,
     showMessage: false,
     verified: null,
-    showVerified: false
+    showVerified: false,
+    certificateID: []
   }
 
   componentDidMount = async () => {
@@ -57,23 +58,19 @@ export default class Home extends Component {
 
   sendHash = async () => {
     const { accounts, contract } = this.state
+    const d = new Date();
     console.log(document.getElementById('email').value)
-    await contract.methods
+    const receipt = await contract.methods
       .generateCertificate(
         document.getElementById('email').value,
         document.getElementById('name').value,
         document.getElementById('org-name').value,
         document.getElementById('course-name').value,
         this.state.ipfsHash,
+        d.getDate() + '-' + d.getMonth() + '-' + d.getFullYear()
       )
       .send({ from: accounts[0], gas: 3000000 })
-
-    const response = await contract.methods
-      .getHash(document.getElementById('email').value)
-      .call()
-    console.log(response)
-    // Update state with the result.
-    this.setState({ ipfsHash: response })
+      console.log(receipt.events.CertificateGenerated.returnValues)
   }
 
   captureFile(e) {
@@ -101,19 +98,27 @@ export default class Home extends Component {
     })
   }
 
-  onSubmitStudent = async (e) => {
+  onSubmitStudentCertID = async (e) => {
     const { contract } = this.state
     e.preventDefault()
-    const ipfs_hash = await contract.methods
-      .getHash(document.getElementById('student-email').value)
+    const certificate = await contract.methods
+      .getCertificate(document.getElementById('certificate-id').value)
       .call()
-    const certficate = await contract.methods
-      .certificates(document.getElementById('student-email').value)
-      .call()
-    this.setState({ ipfsHash: ipfs_hash })
-    console.log(certficate)
-    return null
+    this.setState({ ipfsHash: certificate[4]})
+    console.log(certificate)
   }
+
+  onSubmitStudentEmail = async (e) => {
+    const { contract } = this.state
+    e.preventDefault()
+    const certificate = await contract.methods
+      .getAllCertificate(document.getElementById('student-email').value)
+      .call()
+    this.setState({ certificateID: certificate})
+    console.log(certificate)
+  }
+
+
 
   _showMessage = (bool) => {
     const { ipfs_hash } = this.state
@@ -141,7 +146,9 @@ export default class Home extends Component {
     }
     return (
       <div>
-                  <i className="fa" ><FaAdn /></i>
+        <i className="fa">
+          <FaAdn />
+        </i>
         <section className="et-hero-tabs">
           <h1>Certification System</h1>
           <h3>Using Etherum Blockchain</h3>
@@ -209,9 +216,9 @@ export default class Home extends Component {
                   <label className="file">
                     <Button
                       style={{
-                        border: '1px solid #494949',
-                        borderRadius: '50px',
-                        backgroundColor: '#F7F7F7',
+                        border: "1px solid #494949",
+                        borderRadius: "50px",
+                        backgroundColor: "#F7F7F7",
                       }}
                     >
                       <input
@@ -244,11 +251,83 @@ export default class Home extends Component {
 
           <section className="et-slide-student" id="tab-student">
             <h1>Student</h1>
-            <form onSubmit={this.onSubmitStudent} className="form">
+            <div className="student-form">
+              <form onSubmit={this.onSubmitStudentCertID} className="form">
+                <fieldset className="form-fieldset ui-input __first">
+                  <input type="text" id="certificate-id" tabIndex="0" placeholder="For display Certificate"/>
+                  <label htmlFor="certificate-id">
+                    <span data-text="certificate-id">Certificate ID</span>
+                  </label>
+                </fieldset>
+                <div className="d-flex justify-content-center pb-3">
+                  <button
+                    type="submit"
+                    className="button-submit"
+                    onClick={this._showMessage.bind(null, true)}
+                  >
+                    <span>Submit</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M0 11c2.761.575 6.312 1.688 9 3.438 3.157-4.23 8.828-8.187 15-11.438-5.861 5.775-10.711 12.328-14 18.917-2.651-3.766-5.547-7.271-10-10.917z" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+              <form onSubmit={this.onSubmitStudentEmail} className="form">
+              <fieldset className="form-fieldset ui-input __second">
+                  <input type="text" id="student-email" tabIndex="0" placeholder="For display all certiicate ID" />
+                  <label htmlFor="student-email">
+                    <span data-text="E-mail Address">E-mail Address</span>
+                  </label>
+                </fieldset>
+                <div className="d-flex justify-content-center pb-3">
+                  <button type="submit" className="button-submit" onClick={this._showMessage.bind(null, true)}>
+                    <span>Submit</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M0 11c2.761.575 6.312 1.688 9 3.438 3.157-4.23 8.828-8.187 15-11.438-5.861 5.775-10.711 12.328-14 18.917-2.651-3.766-5.547-7.271-10-10.917z" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+              </div>
+              {this.state.showMessage && (
+                <div>
+                  <div>
+                    {this.state.certificateID.map(id => (
+                      <li>
+                        {id}
+                      </li>
+                    ))}
+                  </div>
+                  <a
+                    href={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
+                    target="_blank"
+                  >
+                    <img
+                      src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
+                      alt=""
+                    />
+                  </a>
+                </div>
+              )}
+
+          </section>
+          <section className="et-slide-company" id="tab-company">
+            <h1>Company</h1>
+            <form onSubmit={this.onSubmitCompany} className="form">
               <fieldset className="form-fieldset ui-input __first">
-                <input type="text" id="student-email" tabIndex="0" />
-                <label htmlFor="student-email">
-                  <span data-text="E-mail Address">E-mail Address</span>
+                <input type="text" id="cert-id" tabIndex="0" />
+                <label htmlFor="cert-id">
+                  <span data-text="Certificate ID">Certificate ID</span>
                 </label>
               </fieldset>
               <div className="form-footer">
@@ -267,54 +346,38 @@ export default class Home extends Component {
                 </div>
               </div>
             </form>
-            <Button onClick={this._showMessage.bind(null, true)}>
-              Show Image
-            </Button>
-            {this.state.showMessage && (
+            {this.state.showVerified && (
               <div>
-                <a
-                  href={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
-                  target="_blank"
-                >
-                  <img
-                    src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
-                    alt=""
-                  />
-                </a>
+                <h2>This Certificate ID has</h2>{" "}
+                {this.state.verified ? (
+                  <div>
+                    <h2>
+                      Already Verified
+                      <img
+                        className="icon"
+                        src="./images/check.png"
+                        alt="verified-icon"
+                      />
+                    </h2>
+                  </div>
+                ) : (
+                  <div>
+                    <h2>
+                      Not Verify
+                      <img
+                        className="icon"
+                        src="./images/cross.png"
+                        alt="unverified-icon"
+                      />
+                    </h2>
+                  </div>
+                )}
               </div>
             )}
           </section>
-          <section className="et-slide-company" id="tab-company">
-            <h1>Company</h1>
-            <form onSubmit={this.onSubmitCompany} className="form">
-              <fieldset className="form-fieldset ui-input __first">
-                <input type="text" id="cert-id" tabIndex="0" />
-                <label htmlFor="cert-id">
-                  <span data-text="Certificate ID">Certificate ID</span>
-                </label>
-              </fieldset>
-              <div className="form-footer">
-                <div className="d-flex justify-content-center pb-3">
-                <button type="submit" className="button-submit">
-                    <span>Submit</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M0 11c2.761.575 6.312 1.688 9 3.438 3.157-4.23 8.828-8.187 15-11.438-5.861 5.775-10.711 12.328-14 18.917-2.651-3.766-5.547-7.271-10-10.917z" />
-                    </svg>
-                  </button>
-                  </div>
-              </div>
-            </form>
-            {this.state.showVerified && (<div><h2>This Certificate ID has</h2> {this.state.verified ? (<div><h2>Already Verified<img className="icon" src="./images/check.png"  alt="verified-icon" /></h2></div>):(<div><h2>Not Verify<img className="icon" src="./images/cross.png"  alt="unverified-icon" /></h2></div>)}</div> ) }
-          </section>
         </main>
       </div>
-      
-    )
+    );
   }
 }
 

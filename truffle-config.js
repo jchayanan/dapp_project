@@ -5,7 +5,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 module.exports = {
   contracts_build_directory: path.join(__dirname, "client/src/contracts"),
   networks: {
-    develop: {
+    development: {
       host: "127.0.0.1",
       port: 7545,
       network_id: "5777",
@@ -20,5 +20,11 @@ module.exports = {
       networkCheckTimeout: 1000000,
       timeoutBlocks: 200
     },
+  },
+  compilers: {
+    solc: {
+       version: "0.8.7",    // Fetch exact version from solc-bin (default: truffle's version)
+
+          }
   }
 };

@@ -1,0 +1,26 @@
+.nav-bar {
+    font-family: 'Century Gothic', 'Lato', sans-serif;
+    font-weight: bold;
+    background-color: rgb(37, 37, 37);
+    z-index: 99;
+    width: 100%;
+    padding: 20px;
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+nav li:first-child {
+    list-style: none;
+    color: #fff;
+    padding: 5px 10px 5px 10px;
+}
+
+nav li:last-child {
+    list-style: none;
+    padding: 5px 10px;
+    border-radius: 30px;
+    background-color: #fff;
+    color: rgb(37, 37, 37)
+}
