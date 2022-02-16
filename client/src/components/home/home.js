@@ -2,8 +2,8 @@ import React, { Component } from 'react'
 import Certification from '../../../src/contracts/Certification.json'
 import getWeb3 from '../../getWeb3'
 import ipfs from '../../ipfs'
-import { FaAdn } from 'react-icons/fa';
-import { Button } from 'reactstrap'
+import ModalComponent from './modal.js'
+import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import '../styles/home.scss'
 import '../styles/form.scss'
 import '../styles/button.scss'
@@ -13,19 +13,27 @@ export default class Home extends Component {
   constructor(props) {
     super(props)
     this.captureFile = this.captureFile.bind(this)
-    this.onSubmit = this.onSubmit.bind(this)
-  }
-  state = {
-    web3: null,
-    accounts: null,
-    contract: null,
-    buffer: null,
-    ipfsHash: '',
-    imageStatus: false,
-    showMessage: false,
-    verified: null,
-    showVerified: false,
-    certificateID: []
+    this.sendHash = this.sendHash.bind(this)
+    this.handleChange = this.handleChange.bind(this)
+    this.state = {
+      web3: null,
+      accounts: null,
+      contract: null,
+      buffer: null,
+      ipfsHash: '',
+      imageStatus: false,
+      showMessage: false,
+      verified: null,
+      showVerified: false,
+      certificateID: [],
+      email:'',
+      name:'',
+      candidate:'',
+      org:'',
+      course:'',
+      certId:'',
+      address:''
+    }
   }
 
   componentDidMount = async () => {
@@ -48,30 +56,52 @@ export default class Home extends Component {
       // example of interacting with the contract's methods.
       this.setState({ web3, accounts, contract: instance })
     } catch (error) {
-      // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`,
-      )
       console.error(error)
     }
   }
 
-  sendHash = async () => {
-    const { accounts, contract } = this.state
+  handleChange(event){
+    this.setState({
+      // Computed property names
+      // keys of the objects are computed dynamically
+      [event.target.name] : event.target.value
+    })
+  }
+
+  sendHash = async (e) => {
+    e.preventDefault();
+    const { accounts, contract } = this.state;
     const d = new Date();
-    console.log(document.getElementById('email').value)
-    const receipt = await contract.methods
+    await contract.methods
       .generateCertificate(
-        document.getElementById('email').value,
-        document.getElementById('name').value,
-        document.getElementById('org-name').value,
-        document.getElementById('course-name').value,
+        this.state.email,
+        this.state.candidate,
+        this.state.org,
+        this.state.course,
         this.state.ipfsHash,
-        d.getDate() + '-' + d.getMonth() + '-' + d.getFullYear()
+        d.getDate() + "-" + d.getMonth() + "-" + d.getFullYear()
       )
       .send({ from: accounts[0], gas: 3000000 })
-      console.log(receipt.events.CertificateGenerated.returnValues)
-  }
+      .then(
+        (result) => {
+          console.log("onSubmit...");
+          ipfs.files.add(this.state.buffer, (err, result) => {
+            if (err) {
+              console.error("error");
+              return;
+            }
+            this.setState({ ipfsHash: result[0].hash });
+            console.log("ipfsHash", this.state.ipfsHash);
+          });
+          console.log(result.events.CertificateGenerated.returnValues);
+        },
+        (error) => {
+          alert("You are not allow");
+        }
+      );
+      alert("Upload successfully!")
+      this.setState({email: '', candidate:'', org:'', course:''})
+  };
 
   captureFile(e) {
     e.preventDefault()
@@ -84,25 +114,11 @@ export default class Home extends Component {
     }
   }
 
-  onSubmit(e) {
-    e.preventDefault()
-    console.log('onSubmit...')
-    ipfs.files.add(this.state.buffer, (err, result) => {
-      if (err) {
-        console.error('error')
-        return
-      }
-      this.setState({ ipfsHash: result[0].hash })
-      console.log('ipfsHash', this.state.ipfsHash)
-      this.sendHash()
-    })
-  }
-
   onSubmitStudentCertID = async (e) => {
     const { contract } = this.state
     e.preventDefault()
     const certificate = await contract.methods
-      .getCertificate(document.getElementById('certificate-id').value)
+      .getCertificate(this.state.certId)
       .call()
     this.setState({ ipfsHash: certificate[4]})
     console.log(certificate)
@@ -112,7 +128,7 @@ export default class Home extends Component {
     const { contract } = this.state
     e.preventDefault()
     const certificate = await contract.methods
-      .getAllCertificate(document.getElementById('student-email').value)
+      .getAllCertificate(this.state.email)
       .call()
     this.setState({ certificateID: certificate})
     console.log(certificate)
@@ -133,11 +149,21 @@ export default class Home extends Component {
     const { contract } = this.state
     e.preventDefault()
     const verify_result = await contract.methods
-      .isVerified(document.getElementById('cert-id').value)
+      .isVerified(this.state.certId)
       .call()
-    console.log(document.getElementById('cert-id').value)
+    console.log(this.state.certId)
     console.log(verify_result)
     this.setState({verified: verify_result, showVerified: true})
+  }
+
+  onSubmitModal = async (e) => {
+    e.preventDefault()
+    const { accounts, contract } = this.state
+    const receipt = await contract.methods
+      .issuerRegister(
+        document.getElementById('issuer-address').value)
+      .send({ from: accounts[2], gas: 3000000 })
+      console.log(receipt.events.IssuerRegistered.returnValues)
   }
 
   render() {
@@ -146,9 +172,6 @@ export default class Home extends Component {
     }
     return (
       <div>
-        <i className="fa">
-          <FaAdn />
-        </i>
         <section className="et-hero-tabs">
           <h1>Certification System</h1>
           <h3>Using Etherum Blockchain</h3>
@@ -157,7 +180,16 @@ export default class Home extends Component {
               <span className="circle" aria-hidden="true">
                 <span className="icon arrow"></span>
               </span>
-              <span className="button-text">Log-In</span>
+              <span className="button-text">
+                <ModalComponent
+                  title="Register Issuer"
+                  cancelButtonText="Cancel"
+                  actionButtonText="Submit"
+                  buttonText="Register"
+                  whenClicked={this.onSubmitModal}
+                  whenChange={this.handleChange}
+                />
+              </span>
             </button>
           </div>
 
@@ -184,41 +216,43 @@ export default class Home extends Component {
               </div>
               <div className="container">
                 <h2>Upload Data</h2>
-                <form onSubmit={this.onSubmit} className="form">
+                <form onSubmit={this.sendHash} className="form">
                   <fieldset className="form-fieldset ui-input __first">
-                    <input type="email" id="email" tabIndex="0" />
+                    <input type="email" name="email" id="email" tabIndex="0" value={this.state.email} onChange={this.handleChange}/>
                     <label htmlFor="username">
                       <span data-text="E-mail Address">E-mail Address</span>
                     </label>
                   </fieldset>
 
                   <fieldset className="form-fieldset ui-input __second">
-                    <input type="text" id="name" tabIndex="0" />
+                    <input type="text" name="candidate" id="candidate" tabIndex="0" value={this.state.candidate} onChange={this.handleChange}/>
                     <label htmlFor="name">
                       <span data-text="Name">Name</span>
                     </label>
                   </fieldset>
 
                   <fieldset className="form-fieldset ui-input __third">
-                    <input type="text" id="org-name" />
+                    <input type="text" name="org" id="org-name" value={this.state.org} onChange={this.handleChange} />
                     <label htmlFor="new-password">
                       <span data-text="Organization">Organization</span>
                     </label>
                   </fieldset>
 
                   <fieldset className="form-fieldset ui-input __fourth">
-                    <input type="text" id="course-name" />
+                    <input type="text" name="course" id="course-name" value={this.state.course} onChange={this.handleChange}/>
                     <label htmlFor="repeat-new-password">
                       <span data-text="Courses">Courses</span>
                     </label>
                   </fieldset>
 
                   <label className="file">
-                    <Button
+                    <div
                       style={{
                         border: "1px solid #494949",
                         borderRadius: "50px",
+                        padding: "10px",
                         backgroundColor: "#F7F7F7",
+                        marginTop: "20px"
                       }}
                     >
                       <input
@@ -227,12 +261,7 @@ export default class Home extends Component {
                         aria-label="File browser example"
                         onChange={this.captureFile}
                       />
-                    </Button>
-                    <input
-                      type="submit"
-                      className="btn-u"
-                      value="Upload & Submit"
-                    />
+                    </div>
                   </label>
                   <div className="form-footer">
                     <div id="container" className="pt-14">
@@ -254,9 +283,16 @@ export default class Home extends Component {
             <div className="student-form">
               <form onSubmit={this.onSubmitStudentCertID} className="form">
                 <fieldset className="form-fieldset ui-input __first">
-                  <input type="text" id="certificate-id" tabIndex="0" placeholder="For display Certificate"/>
-                  <label htmlFor="certificate-id">
-                    <span data-text="certificate-id">Certificate ID</span>
+                  <input
+                    type="text"
+                    name="certId"
+                    id="certId"
+                    tabIndex="0"
+                    placeholder="For display Certificate"
+                    onChange={this.handleChange}
+                  />
+                  <label htmlFor="certId">
+                    <span data-text="certId">Certificate ID</span>
                   </label>
                 </fieldset>
                 <div className="d-flex justify-content-center pb-3">
@@ -278,14 +314,25 @@ export default class Home extends Component {
                 </div>
               </form>
               <form onSubmit={this.onSubmitStudentEmail} className="form">
-              <fieldset className="form-fieldset ui-input __second">
-                  <input type="text" id="student-email" tabIndex="0" placeholder="For display all certiicate ID" />
-                  <label htmlFor="student-email">
+                <fieldset className="form-fieldset ui-input __second">
+                  <input
+                    type="text"
+                    name="email"
+                    id="email"
+                    tabIndex="0"
+                    placeholder="For display all certiicate ID"
+                    onChange={this.handleChange}
+                  />
+                  <label htmlFor="email">
                     <span data-text="E-mail Address">E-mail Address</span>
                   </label>
                 </fieldset>
                 <div className="d-flex justify-content-center pb-3">
-                  <button type="submit" className="button-submit" onClick={this._showMessage.bind(null, true)}>
+                  <button
+                    type="submit"
+                    className="button-submit"
+                    onClick={this._showMessage.bind(null, true)}
+                  >
                     <span>Submit</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -298,35 +345,32 @@ export default class Home extends Component {
                   </button>
                 </div>
               </form>
-              </div>
-              {this.state.showMessage && (
+            </div>
+            {this.state.showMessage && (
+              <div>
                 <div>
-                  <div>
-                    {this.state.certificateID.map(id => (
-                      <li>
-                        {id}
-                      </li>
-                    ))}
-                  </div>
-                  <a
-                    href={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
-                    target="_blank"
-                  >
-                    <img
-                      src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
-                      alt=""
-                    />
-                  </a>
+                  {this.state.certificateID.map((id) => (
+                    <li>{id}</li>
+                  ))}
                 </div>
-              )}
-
+                <a
+                  href={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
+                  target="_blank"
+                >
+                  <img
+                    src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
+                    alt=""
+                  />
+                </a>
+              </div>
+            )}
           </section>
           <section className="et-slide-company" id="tab-company">
             <h1>Company</h1>
             <form onSubmit={this.onSubmitCompany} className="form">
               <fieldset className="form-fieldset ui-input __first">
-                <input type="text" id="cert-id" tabIndex="0" />
-                <label htmlFor="cert-id">
+                <input type="text" name="certId" id="certId" tabIndex="0" onChange={this.handleChange} />
+                <label htmlFor="certId">
                   <span data-text="Certificate ID">Certificate ID</span>
                 </label>
               </fieldset>

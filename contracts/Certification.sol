@@ -24,7 +24,7 @@ contract Certification {
     }
 
     //event
-    event CertificateGenerated(address indexed issuer, string id, string email, string ipfs_hash, string dateOfIssue);
+    event CertificateGenerated(address indexed issuer, string id, string email, string ipfs_hash);
     event IssuerRegistered(address indexed issuer, address admin);
 
     //mapping
@@ -42,6 +42,7 @@ contract Certification {
         string memory _ipfs_hash,
         string memory _dateOfIssue 
     ) public {
+        require(isIssuer[msg.sender] == true, "You are not allow");
         certificate_counter++;
         string memory _id = uint2str(block.timestamp);
         Certificate memory cert;
@@ -55,14 +56,13 @@ contract Certification {
         certificates[_id] = cert;
         allCertificate[_email].push(_id); 
         ipfs_hash[_id] = true;
-        emit CertificateGenerated(msg.sender, _id, _email, _ipfs_hash, _dateOfIssue);
+        emit CertificateGenerated(msg.sender, _id, _email, _ipfs_hash);
     }
 
     function issuerRegister(address issuer) public {
-        require(msg.sender == admin, "You are not allow");
-        require(isIssuer[msg.sender] == true, "This address already registered");
+        require(isIssuer[msg.sender] == true, "You are not allow");
         isIssuer[issuer] = true;
-        emit IssuerRegistered(issuer, admin);
+        emit IssuerRegistered(issuer, msg.sender);
     }
 
     function isVerified(string memory _id) public view returns (bool) {
