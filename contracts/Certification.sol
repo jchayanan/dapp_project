@@ -8,7 +8,7 @@ contract Certification {
 
     //contructor
     constructor() {
-        admin = msg.sender;
+        admin = 0x3084Ef65c0FDeD7F126E58Dee6F9C2f1BCF6f0d7;
         isIssuer[admin] = true;
     }
 
@@ -80,6 +80,10 @@ contract Certification {
 
     function getAllCertificate(string memory _email) public view returns (string[] memory) {
         return allCertificate[_email];
+    }
+
+    function getIssuer(address _address) public view returns (bool) {
+        return isIssuer[_address];
     }
 
     function uint2str(uint _i) internal pure returns (string memory _uintAsString) {

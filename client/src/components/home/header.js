@@ -3,9 +3,6 @@ import getWeb3 from '../../getWeb3'
 import '../styles/header.scss'
 
 export default class header extends Component {
-    constructor(props) {
-        super(props)
-    }
 
     state = {
         web3: null,

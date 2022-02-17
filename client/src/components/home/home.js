@@ -2,8 +2,9 @@ import React, { Component } from 'react'
 import Certification from '../../../src/contracts/Certification.json'
 import getWeb3 from '../../getWeb3'
 import ipfs from '../../ipfs'
-import ModalComponent from './modal.js'
-import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
+import ModalComponent from './modal'
+import ModalImage from './modal-image'
+import ModalInform from './modal-inform'
 import '../styles/home.scss'
 import '../styles/form.scss'
 import '../styles/button.scss'
@@ -21,8 +22,6 @@ export default class Home extends Component {
       contract: null,
       buffer: null,
       ipfsHash: '',
-      imageStatus: false,
-      showMessage: false,
       verified: null,
       showVerified: false,
       certificateID: [],
@@ -32,7 +31,7 @@ export default class Home extends Component {
       org:'',
       course:'',
       certId:'',
-      address:''
+      address:'',
     }
   }
 
@@ -72,34 +71,33 @@ export default class Home extends Component {
     e.preventDefault();
     const { accounts, contract } = this.state;
     const d = new Date();
-    await contract.methods
-      .generateCertificate(
-        this.state.email,
-        this.state.candidate,
-        this.state.org,
-        this.state.course,
-        this.state.ipfsHash,
-        d.getDate() + "-" + d.getMonth() + "-" + d.getFullYear()
-      )
-      .send({ from: accounts[0], gas: 3000000 })
-      .then(
-        (result) => {
-          console.log("onSubmit...");
-          ipfs.files.add(this.state.buffer, (err, result) => {
-            if (err) {
-              console.error("error");
-              return;
-            }
-            this.setState({ ipfsHash: result[0].hash });
-            console.log("ipfsHash", this.state.ipfsHash);
-          });
-          console.log(result.events.CertificateGenerated.returnValues);
-        },
-        (error) => {
-          alert("You are not allow");
-        }
-      );
-      alert("Upload successfully!")
+    const issuer = await contract.methods.getIssuer(accounts[0]).call()
+    if (issuer === true) {const result = await ipfs.files.add(this.state.buffer)
+      const ipfsHash = await result[0].hash;
+      this.setState({ ipfsHash: ipfsHash});
+      console.log("ipfsHash", this.state.ipfsHash);
+      await contract.methods
+        .generateCertificate(
+          this.state.email,
+          this.state.candidate,
+          this.state.org,
+          this.state.course,
+          this.state.ipfsHash,
+          d.getDate() + "-" + d.getMonth() + "-" + d.getFullYear()
+        )
+        .send({ from: accounts[0], gas: 3000000 })
+        .then(
+          (result) => {
+            console.log("onSubmit...");
+            console.log(result.events.CertificateGenerated.returnValues);
+            alert("Upload successfully!")
+          },
+          (error) => {
+            console.log(error)
+          }
+        );
+      } else {alert("You are not allowed");}
+    
       this.setState({email: '', candidate:'', org:'', course:''})
   };
 
@@ -134,16 +132,6 @@ export default class Home extends Component {
     console.log(certificate)
   }
 
-
-
-  _showMessage = (bool) => {
-    const { ipfs_hash } = this.state
-    this.setState({
-      showMessage: bool,
-      ipfs_hash: ipfs_hash,
-    })
-  }
-
   onSubmitCompany = async (e) => {
     this.forceUpdate();
     const { contract } = this.state
@@ -159,11 +147,20 @@ export default class Home extends Component {
   onSubmitModal = async (e) => {
     e.preventDefault()
     const { accounts, contract } = this.state
-    const receipt = await contract.methods
+    await contract.methods
       .issuerRegister(
         document.getElementById('issuer-address').value)
-      .send({ from: accounts[2], gas: 3000000 })
-      console.log(receipt.events.IssuerRegistered.returnValues)
+      .send({ from: accounts[0], gas: 3000000 }).then(
+        (result) => {
+          console.log("onSubmit...");
+          console.log(result.events.IssuerRegistered.returnValues)
+        },
+        (error) => {
+          alert(error)
+          console.log(error)
+        }
+      );
+      
   }
 
   render() {
@@ -296,21 +293,12 @@ export default class Home extends Component {
                   </label>
                 </fieldset>
                 <div className="d-flex justify-content-center pb-3">
-                  <button
-                    type="submit"
-                    className="button-submit"
-                    onClick={this._showMessage.bind(null, true)}
-                  >
-                    <span>Submit</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M0 11c2.761.575 6.312 1.688 9 3.438 3.157-4.23 8.828-8.187 15-11.438-5.861 5.775-10.711 12.328-14 18.917-2.651-3.766-5.547-7.271-10-10.917z" />
-                    </svg>
-                  </button>
+                  <ModalImage 
+                  buttonText="Submit"
+                  title="Certificate"
+                  cancelButtonText="Close"
+                  ipfsHash={this.state.ipfsHash}
+                  onClick={this.onSubmitStudentCertID} />
                 </div>
               </form>
               <form onSubmit={this.onSubmitStudentEmail} className="form">
@@ -328,42 +316,15 @@ export default class Home extends Component {
                   </label>
                 </fieldset>
                 <div className="d-flex justify-content-center pb-3">
-                  <button
-                    type="submit"
-                    className="button-submit"
-                    onClick={this._showMessage.bind(null, true)}
-                  >
-                    <span>Submit</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M0 11c2.761.575 6.312 1.688 9 3.438 3.157-4.23 8.828-8.187 15-11.438-5.861 5.775-10.711 12.328-14 18.917-2.651-3.766-5.547-7.271-10-10.917z" />
-                    </svg>
-                  </button>
+                  <ModalInform buttonText="Submit"
+                  title="All Certificates ID"
+                  cancelButtonText="Close"
+                  certificateID={this.state.certificateID}
+                  email={this.state.email}
+                  onClick={this.onSubmitStudentEmail} />
                 </div>
               </form>
             </div>
-            {this.state.showMessage && (
-              <div>
-                <div>
-                  {this.state.certificateID.map((id) => (
-                    <li>{id}</li>
-                  ))}
-                </div>
-                <a
-                  href={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
-                  target="_blank"
-                >
-                  <img
-                    src={`https://ipfs.io/ipfs/${this.state.ipfsHash}`}
-                    alt=""
-                  />
-                </a>
-              </div>
-            )}
           </section>
           <section className="et-slide-company" id="tab-company">
             <h1>Company</h1>

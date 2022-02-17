@@ -1,9 +1,6 @@
 import React, { useState } from "react";
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 
-// NOTICE
-// Modal is brought in with it's own trigger, so import the component where you want the trigger to be.
-
 const ModalComponent = (props) => {
   const {
     buttonText,
@@ -28,9 +25,9 @@ const ModalComponent = (props) => {
             {title}
           </ModalHeader>
           <ModalBody className="text-left border-0">
-            <p className="modal-label">Eenter Issuer Address</p>
+            <p className="modal-label">Enter Issuer Address</p>
      
-                <input type="text" name="address" id="issuer-address" name="issuer-address"className="form-control" placeholder="Address" />
+                <input type="text" name="address" id="issuer-address" className="form-control" placeholder="Address" />
 
           </ModalBody>
           <ModalFooter className="modal-footer border-0">
