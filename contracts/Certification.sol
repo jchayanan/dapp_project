@@ -10,6 +10,7 @@ contract Certification {
     constructor() {
         admin = 0x3084Ef65c0FDeD7F126E58Dee6F9C2f1BCF6f0d7;
         isIssuer[admin] = true;
+        isIssuer[0x18Cc1Cf8756313267e437B8cde208bc13796E401] = true;
     }
 
     //struct
@@ -72,9 +73,9 @@ contract Certification {
         return false;
     }
     
-    function getCertificate(string memory _id) public view returns (string memory, string memory, string memory, string memory, string memory, string memory) {
+    function getCertificate(string memory _id) public view returns (string memory, string memory, string memory, string memory, string memory, string memory, string memory) {
         Certificate memory cert = certificates[_id];
-        return (cert.email, cert.candidateName, cert.orgName, cert.courseName, cert.ipfs_hash, cert.dateOfIssue);
+        return (cert.id, cert.email, cert.candidateName, cert.orgName, cert.courseName, cert.ipfs_hash, cert.dateOfIssue);
     }
     
 

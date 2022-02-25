@@ -3,6 +3,7 @@ import Certification from '../../../src/contracts/Certification.json'
 import getWeb3 from '../../getWeb3'
 import ipfs from '../../ipfs'
 import ModalComponent from './modal'
+import { Table } from 'reactstrap';
 import ModalImage from './modal-image'
 import ModalInform from './modal-inform'
 import '../styles/home.scss'
@@ -24,7 +25,9 @@ export default class Home extends Component {
       ipfsHash: '',
       verified: null,
       showVerified: false,
+      showMessage: false,
       certificateID: [],
+      certificateAll: [],
       email:'',
       name:'',
       candidate:'',
@@ -118,18 +121,26 @@ export default class Home extends Component {
     const certificate = await contract.methods
       .getCertificate(this.state.certId)
       .call()
-    this.setState({ ipfsHash: certificate[4]})
+    this.setState({ ipfsHash: certificate[5]})
     console.log(certificate)
   }
 
   onSubmitStudentEmail = async (e) => {
-    const { contract } = this.state
-    e.preventDefault()
-    const certificate = await contract.methods
+    const { contract, certificateAll } = this.state;
+    const fetch = (certID) => {
+       return contract.methods.getCertificate(certID).call()
+    }
+    e.preventDefault();
+    const certificates = await contract.methods
       .getAllCertificate(this.state.email)
       .call()
-    this.setState({ certificateID: certificate})
-    console.log(certificate)
+    if(certificateAll.length == 0){certificates.map((certificate) => {
+      fetch(certificate).then((response) => {
+        this.state.certificateAll.push(response);
+        this.setState({ certificateID: certificates, showMessage: true});
+      })})} 
+      console.log(this.state.certificateAll)
+    console.log(certificates);
   }
 
   onSubmitCompany = async (e) => {
@@ -215,28 +226,54 @@ export default class Home extends Component {
                 <h2>Upload Data</h2>
                 <form onSubmit={this.sendHash} className="form">
                   <fieldset className="form-fieldset ui-input __first">
-                    <input type="email" name="email" id="email" tabIndex="0" value={this.state.email} onChange={this.handleChange}/>
+                    <input
+                      type="email"
+                      name="email"
+                      id="email"
+                      tabIndex="0"
+                      value={this.state.email}
+                      onChange={this.handleChange}
+                    />
                     <label htmlFor="username">
                       <span data-text="E-mail Address">E-mail Address</span>
                     </label>
                   </fieldset>
 
                   <fieldset className="form-fieldset ui-input __second">
-                    <input type="text" name="candidate" id="candidate" tabIndex="0" value={this.state.candidate} onChange={this.handleChange}/>
+                    <input
+                      type="text"
+                      name="candidate"
+                      id="candidate"
+                      tabIndex="0"
+                      value={this.state.candidate}
+                      onChange={this.handleChange}
+                    />
                     <label htmlFor="name">
                       <span data-text="Name">Name</span>
                     </label>
                   </fieldset>
 
                   <fieldset className="form-fieldset ui-input __third">
-                    <input type="text" name="org" id="org-name" value={this.state.org} onChange={this.handleChange} />
+                    <input
+                      type="text"
+                      name="org"
+                      id="org-name"
+                      value={this.state.org}
+                      onChange={this.handleChange}
+                    />
                     <label htmlFor="new-password">
                       <span data-text="Organization">Organization</span>
                     </label>
                   </fieldset>
 
                   <fieldset className="form-fieldset ui-input __fourth">
-                    <input type="text" name="course" id="course-name" value={this.state.course} onChange={this.handleChange}/>
+                    <input
+                      type="text"
+                      name="course"
+                      id="course-name"
+                      value={this.state.course}
+                      onChange={this.handleChange}
+                    />
                     <label htmlFor="repeat-new-password">
                       <span data-text="Courses">Courses</span>
                     </label>
@@ -249,7 +286,7 @@ export default class Home extends Component {
                         borderRadius: "50px",
                         padding: "10px",
                         backgroundColor: "#F7F7F7",
-                        marginTop: "20px"
+                        marginTop: "20px",
                       }}
                     >
                       <input
@@ -293,12 +330,13 @@ export default class Home extends Component {
                   </label>
                 </fieldset>
                 <div className="d-flex justify-content-center pb-3">
-                  <ModalImage 
-                  buttonText="Submit"
-                  title="Certificate"
-                  cancelButtonText="Close"
-                  ipfsHash={this.state.ipfsHash}
-                  onClick={this.onSubmitStudentCertID} />
+                  <ModalImage
+                    buttonText="Submit"
+                    title="Certificate"
+                    cancelButtonText="Close"
+                    ipfsHash={this.state.ipfsHash}
+                    onClick={this.onSubmitStudentCertID}
+                  />
                 </div>
               </form>
               <form onSubmit={this.onSubmitStudentEmail} className="form">
@@ -316,21 +354,66 @@ export default class Home extends Component {
                   </label>
                 </fieldset>
                 <div className="d-flex justify-content-center pb-3">
-                  <ModalInform buttonText="Submit"
-                  title="All Certificates ID"
-                  cancelButtonText="Close"
-                  certificateID={this.state.certificateID}
-                  email={this.state.email}
-                  onClick={this.onSubmitStudentEmail} />
+                  <button
+                    type="submit"
+                    className="button-submit"
+                    certificateID={this.state.certificateID}
+                    email={this.state.email}
+                    onClick={this.onSubmitStudentEmail}
+                  >
+                    <span>Submit</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M0 11c2.761.575 6.312 1.688 9 3.438 3.157-4.23 8.828-8.187 15-11.438-5.861 5.775-10.711 12.328-14 18.917-2.651-3.766-5.547-7.271-10-10.917z" />
+                    </svg>
+                  </button>
                 </div>
               </form>
             </div>
+            {this.state.showMessage && (
+              <div>
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Course</th>
+                      <th>Organization</th>
+                      <th>ID</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  {this.state.certificateAll.map((id, index) => (
+                    <>
+                      <tbody>
+                        <tr>
+                          <th scope="row">{index}</th>
+                          <td>{id[4]}</td>
+                          <td>{id[3]}</td>
+                          <td>{id[0]}</td>
+                          <td>{id[6]}</td>
+                        </tr>
+                      </tbody>
+                    </>
+                  ))}
+                </Table>
+              </div>
+            )}
           </section>
           <section className="et-slide-company" id="tab-company">
             <h1>Company</h1>
             <form onSubmit={this.onSubmitCompany} className="form">
               <fieldset className="form-fieldset ui-input __first">
-                <input type="text" name="certId" id="certId" tabIndex="0" onChange={this.handleChange} />
+                <input
+                  type="text"
+                  name="certId"
+                  id="certId"
+                  tabIndex="0"
+                  onChange={this.handleChange}
+                />
                 <label htmlFor="certId">
                   <span data-text="Certificate ID">Certificate ID</span>
                 </label>
