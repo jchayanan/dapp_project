@@ -137,10 +137,11 @@ export default class Home extends Component {
     const certificates = await contract.methods
       .getAllCertificate(this.state.email)
       .call()
-    if(certificateAll.length == 0){certificates.map((certificate) => {
+    if(certificateAll.length === 0){certificates.map((certificate) => {
       fetch(certificate).then((response) => {
         this.state.certificateAll.push(response);
         this.setState({ certificateID: certificates, showMessage: true});
+        return null;
       })})} 
       console.log(this.state.certificateAll)
     console.log(certificates);
@@ -350,7 +351,7 @@ export default class Home extends Component {
                     name="email"
                     id="email"
                     tabIndex="0"
-                    placeholder="For display all certiicate ID"
+                    placeholder="For display all certificate"
                     onChange={this.handleChange}
                   />
                   <label htmlFor="email">

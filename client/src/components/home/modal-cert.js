@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
+import { PulseSpinner  } from "react-spinners-kit";
 
 const ModalCert = (props) => {
   const {
@@ -12,6 +13,7 @@ const ModalCert = (props) => {
   } = props;
   
   const [modal, setModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const toggle = () => setModal(!modal);
 
@@ -19,7 +21,16 @@ const ModalCert = (props) => {
   return (
     <div>
       <div onClick={toggle}>
-        <a style={{cursor:'pointer', textDecoration:'underline', fontWeight:'bold'}} onClick={whenClick}>{buttonText}</a>
+        <a
+          style={{
+            cursor: "pointer",
+            textDecoration: "underline",
+            fontWeight: "bold",
+          }}
+          onClick={whenClick}
+        >
+          {buttonText}
+        </a>
       </div>
       <Modal
         size="lg"
@@ -32,6 +43,9 @@ const ModalCert = (props) => {
       >
         <ModalHeader className=" border-1">{title}</ModalHeader>
         <ModalBody className="text-center border-0">
+          <div style={{ display: loading ? "block" : "none", margin: "0 auto", width: "10%"}}>
+          <PulseSpinner color="#686769" />
+          </div>
           <a
             href={`https://ipfs.io/ipfs/${buttonText}`}
             target="_blank"
@@ -39,9 +53,14 @@ const ModalCert = (props) => {
           >
             <img
               className="modal-image"
-              style={{ position: "relative", width: "100%" }}
+              style={{
+                position: "relative",
+                width: "100%",
+                display: loading ? "none" : "block",
+              }}
               src={`https://ipfs.io/ipfs/${buttonText}`}
-              alt=""
+              alt="certificate image"
+              onLoad={() => setLoading(false)}
             />
           </a>
         </ModalBody>
