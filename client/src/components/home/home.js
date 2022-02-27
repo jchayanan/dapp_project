@@ -5,6 +5,7 @@ import ipfs from '../../ipfs'
 import ModalComponent from './modal'
 import { Table } from 'reactstrap';
 import ModalImage from './modal-image'
+import ModalCert from './modal-cert'
 import ModalInform from './modal-inform'
 import '../styles/home.scss'
 import '../styles/form.scss'
@@ -28,6 +29,7 @@ export default class Home extends Component {
       showMessage: false,
       certificateID: [],
       certificateAll: [],
+      clear: null,
       email:'',
       name:'',
       candidate:'',
@@ -101,7 +103,7 @@ export default class Home extends Component {
         );
       } else {alert("You are not allowed");}
     
-      this.setState({email: '', candidate:'', org:'', course:''})
+      this.setState({email: '', candidate:'', org:'', course:'', clear: Date.now()})
   };
 
   captureFile(e) {
@@ -115,15 +117,16 @@ export default class Home extends Component {
     }
   }
 
-  onSubmitStudentCertID = async (e) => {
-    const { contract } = this.state
-    e.preventDefault()
-    const certificate = await contract.methods
-      .getCertificate(this.state.certId)
-      .call()
-    this.setState({ ipfsHash: certificate[5]})
-    console.log(certificate)
-  }
+  // onSubmitStudentCertID = async (e) => {
+  //   const { contract } = this.state
+  //   e.preventDefault()
+  //   const certificate = await contract.methods
+  //     .getCertificate(this.state.certId)
+  //     .call()
+  //   this.setState({ ipfsHash: certificate[5]})
+  //   console.log(certificate)
+  // }
+
 
   onSubmitStudentEmail = async (e) => {
     const { contract, certificateAll } = this.state;
@@ -294,6 +297,7 @@ export default class Home extends Component {
                         id="file"
                         aria-label="File browser example"
                         onChange={this.captureFile}
+                        key={this.state.date}
                       />
                     </div>
                   </label>
@@ -315,7 +319,7 @@ export default class Home extends Component {
           <section className="et-slide-student" id="tab-student">
             <h1>Student</h1>
             <div className="student-form">
-              <form onSubmit={this.onSubmitStudentCertID} className="form">
+              {/* <form onSubmit={this.onSubmitStudentCertID} className="form">
                 <fieldset className="form-fieldset ui-input __first">
                   <input
                     type="text"
@@ -338,7 +342,7 @@ export default class Home extends Component {
                     onClick={this.onSubmitStudentCertID}
                   />
                 </div>
-              </form>
+              </form> */}
               <form onSubmit={this.onSubmitStudentEmail} className="form">
                 <fieldset className="form-fieldset ui-input __second">
                   <input
@@ -383,21 +387,31 @@ export default class Home extends Component {
                       <th>Course</th>
                       <th>Organization</th>
                       <th>ID</th>
+                      <th>IPFS</th>
                       <th>Date</th>
                     </tr>
                   </thead>
                   {this.state.certificateAll.map((id, index) => (
-                    <>
+                    <React.Fragment key={id[0]}>
                       <tbody>
                         <tr>
-                          <th scope="row">{index}</th>
+                          <th scope="row">{index + 1}</th>
                           <td>{id[4]}</td>
                           <td>{id[3]}</td>
-                          <td>{id[0]}</td>
+                          <td>
+                            {id[0]}
+                          </td>
+                          <td><ModalCert
+                              title="Certificate"
+                              buttonText={id[5]}
+                              cancelButtonText="Close"
+                              ipfsHash={this.state.ipfsHash}
+                              onClick={this.onSubmitStudentCertID}
+                            /></td>
                           <td>{id[6]}</td>
                         </tr>
                       </tbody>
-                    </>
+                    </React.Fragment>
                   ))}
                 </Table>
               </div>
